@@ -1,0 +1,674 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RedisClone</title>
+    <meta
+      name="description"
+      content="A C++20 Redis-inspired key-value store with TCP networking, persistence, expiry, tests, and benchmark."
+    />
+    <style>
+      :root {
+        --paper: #f7f1e3;
+        --ink: #151515;
+        --muted: #5f625e;
+        --line: #d8cfbd;
+        --server: #10263c;
+        --green: #0f7a5c;
+        --blue: #2f6f9f;
+        --amber: #b17214;
+        --terminal: #101010;
+        --terminal-line: #303030;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      button,
+      input,
+      pre,
+      .panel,
+      .tile,
+      .terminal,
+      .visual {
+        border-radius: 8px;
+      }
+
+      .topbar {
+        border-bottom: 1px solid var(--line);
+        background: #fffaf0;
+        padding: 18px 22px;
+      }
+
+      .wrap {
+        width: min(1180px, calc(100vw - 32px));
+        margin: 0 auto;
+      }
+
+      .topbar .wrap {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+      }
+
+      .brand {
+        display: grid;
+        gap: 4px;
+      }
+
+      .eyebrow {
+        color: var(--green);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: clamp(36px, 7vw, 68px);
+        line-height: 0.98;
+      }
+
+      .badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+
+      .badge {
+        border: 1px solid var(--line);
+        background: #ffffff;
+        padding: 9px 11px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 13px;
+      }
+
+      .hero {
+        padding: 28px 0;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+        gap: 22px;
+      }
+
+      .terminal {
+        overflow: hidden;
+        border: 1px solid #202020;
+        background: var(--terminal);
+        box-shadow: 8px 8px 0 #c9a84f;
+        color: #f4f4f4;
+      }
+
+      .terminal-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--terminal-line);
+        background: #1e1e1e;
+        padding: 12px 14px;
+      }
+
+      .dots {
+        display: flex;
+        gap: 7px;
+      }
+
+      .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+      }
+
+      .red {
+        background: #ff5f57;
+      }
+
+      .yellow {
+        background: #febc2e;
+      }
+
+      .green {
+        background: #28c840;
+      }
+
+      .terminal-body {
+        min-height: 420px;
+        padding: 16px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 15px;
+        line-height: 1.55;
+        overflow: hidden;
+      }
+
+      .terminal-body pre {
+        margin: 0 0 10px;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .input-line {
+        color: #75d7ff;
+      }
+
+      .output-line {
+        color: #d8ffd8;
+      }
+
+      form {
+        display: flex;
+        gap: 10px;
+        border-top: 1px solid var(--terminal-line);
+        background: #181818;
+        padding: 14px;
+      }
+
+      input {
+        min-height: 44px;
+        flex: 1;
+        border: 1px solid #3c3c3c;
+        background: #0c0c0c;
+        color: white;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 16px;
+        outline: none;
+        padding: 0 12px;
+      }
+
+      input:focus {
+        border-color: #75d7ff;
+      }
+
+      button {
+        min-height: 44px;
+        border: 1px solid #75d7ff;
+        background: #75d7ff;
+        color: #071319;
+        cursor: pointer;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-weight: 800;
+        padding: 0 16px;
+      }
+
+      button:hover {
+        background: #a4e5ff;
+      }
+
+      .side {
+        display: grid;
+        gap: 16px;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        background: #ffffff;
+        padding: 18px;
+      }
+
+      .visual {
+        width: 100%;
+        border: 1px solid var(--line);
+        background: linear-gradient(135deg, #fff7e8, #dff4ff);
+      }
+
+      .pad {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .pad button {
+        border-color: var(--line);
+        background: #f8f3e8;
+        color: var(--ink);
+        font-size: 13px;
+        text-align: left;
+      }
+
+      .store {
+        margin-top: 14px;
+        min-height: 70px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 14px;
+      }
+
+      .row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        border-bottom: 1px solid #ece3d2;
+        padding: 8px 0;
+      }
+
+      .value {
+        color: var(--green);
+      }
+
+      .features {
+        border-block: 1px solid #6da0c6;
+        background: var(--server);
+        color: white;
+        padding: 28px 0;
+      }
+
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .tile {
+        border: 1px solid #6da0c6;
+        background: #102236;
+        padding: 16px;
+      }
+
+      .tile h3 {
+        color: #ffd166;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 14px;
+      }
+
+      .tile p {
+        margin-top: 10px;
+        color: #d9ecfa;
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+      .run {
+        padding: 28px 0 40px;
+      }
+
+      .run-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 22px;
+      }
+
+      .code {
+        margin-top: 14px;
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        background: #111111;
+        color: #d8ffd8;
+        padding: 18px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        line-height: 1.7;
+      }
+
+      a {
+        color: #125f96;
+        font-weight: 800;
+      }
+
+      footer {
+        border-top: 1px solid var(--line);
+        padding: 18px 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      @media (max-width: 860px) {
+        .topbar .wrap,
+        form {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .badges {
+          justify-content: flex-start;
+        }
+
+        .grid,
+        .run-grid,
+        .feature-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .terminal-body {
+          min-height: 360px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="wrap">
+        <div class="brand">
+          <span class="eyebrow">C++20 TCP key-value store</span>
+          <h1>RedisClone</h1>
+        </div>
+        <div class="badges" aria-label="Project tags">
+          <span class="badge">localhost:6379</span>
+          <span class="badge">POSIX sockets</span>
+          <span class="badge">mutex safe</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="wrap grid">
+          <section class="terminal" aria-label="Interactive RedisClone terminal demo">
+            <div class="terminal-head">
+              <div class="dots" aria-hidden="true">
+                <span class="dot red"></span>
+                <span class="dot yellow"></span>
+                <span class="dot green"></span>
+              </div>
+              <span class="badge">redisclone://demo</span>
+            </div>
+            <div class="terminal-body" id="terminal"></div>
+            <form id="commandForm">
+              <input id="commandInput" aria-label="RedisClone command" value="SET name Aditya" />
+              <button type="submit">RUN</button>
+            </form>
+          </section>
+
+          <aside class="side">
+            <section class="panel">
+              <svg class="visual" viewBox="0 0 1200 750" role="img" aria-labelledby="visualTitle visualDesc">
+                <title id="visualTitle">RedisClone database engine visual</title>
+                <desc id="visualDesc">A server rack connected to key-value records and terminals.</desc>
+                <defs>
+                  <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+                    <stop offset="0" stop-color="#fff7e8" />
+                    <stop offset="0.5" stop-color="#e7f5ef" />
+                    <stop offset="1" stop-color="#dfefff" />
+                  </linearGradient>
+                  <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="22" stdDeviation="18" flood-color="#1b1b1b" flood-opacity="0.22" />
+                  </filter>
+                </defs>
+                <rect width="1200" height="750" fill="url(#bg)" />
+                <path d="M0 610 C180 540 340 680 540 604 C750 524 838 674 1200 548 L1200 750 L0 750 Z" fill="#f3d58a" opacity="0.55" />
+                <g filter="url(#shadow)">
+                  <rect x="394" y="178" width="412" height="394" rx="22" fill="#111827" />
+                  <rect x="432" y="220" width="336" height="58" rx="10" fill="#f7f7f7" />
+                  <rect x="432" y="310" width="336" height="58" rx="10" fill="#f7f7f7" />
+                  <rect x="432" y="400" width="336" height="58" rx="10" fill="#f7f7f7" />
+                  <circle cx="468" cy="249" r="12" fill="#10b981" />
+                  <circle cx="468" cy="339" r="12" fill="#f59e0b" />
+                  <circle cx="468" cy="429" r="12" fill="#38bdf8" />
+                  <rect x="504" y="241" width="212" height="16" rx="8" fill="#172033" />
+                  <rect x="504" y="331" width="168" height="16" rx="8" fill="#172033" />
+                  <rect x="504" y="421" width="232" height="16" rx="8" fill="#172033" />
+                </g>
+                <g fill="none" stroke-linecap="round" stroke-width="7">
+                  <path d="M394 258 C300 240 246 224 170 170" stroke="#0f7a5c" />
+                  <path d="M806 258 C920 240 984 208 1050 148" stroke="#2f6f9f" />
+                  <path d="M394 438 C292 492 238 538 150 612" stroke="#b17214" />
+                  <path d="M806 438 C918 488 990 538 1062 618" stroke="#0f7a5c" />
+                </g>
+                <g filter="url(#shadow)">
+                  <rect x="72" y="108" width="228" height="112" rx="14" fill="#ffffff" />
+                  <rect x="94" y="134" width="62" height="20" rx="10" fill="#0f7a5c" />
+                  <rect x="174" y="134" width="84" height="20" rx="10" fill="#172033" />
+                  <rect x="94" y="172" width="132" height="16" rx="8" fill="#f3d58a" />
+                </g>
+                <g filter="url(#shadow)">
+                  <rect x="62" y="555" width="250" height="112" rx="14" fill="#111111" />
+                  <rect x="88" y="586" width="54" height="16" rx="8" fill="#75d7ff" />
+                  <rect x="158" y="586" width="92" height="16" rx="8" fill="#d8ffd8" />
+                  <rect x="88" y="628" width="166" height="16" rx="8" fill="#ffd166" />
+                </g>
+              </svg>
+            </section>
+
+            <section class="panel">
+              <h2>Command Pad</h2>
+              <div class="pad" id="pad"></div>
+            </section>
+
+            <section class="panel">
+              <h2>Live Store</h2>
+              <div class="store" id="store">(empty)</div>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <section class="features">
+        <div class="wrap feature-grid">
+          <article class="tile">
+            <h3>TCP</h3>
+            <p>POSIX socket server on port 6379 with one worker thread per client.</p>
+          </article>
+          <article class="tile">
+            <h3>Concurrency</h3>
+            <p>Shared map access is protected by mutex-backed datastore operations.</p>
+          </article>
+          <article class="tile">
+            <h3>Persistence</h3>
+            <p>SAVE writes a local snapshot that the server loads again at startup.</p>
+          </article>
+          <article class="tile">
+            <h3>Expiry</h3>
+            <p>TTL support uses lazy reads plus a background cleanup loop.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="run">
+        <div class="wrap run-grid">
+          <section>
+            <h2>Run the C++ server</h2>
+            <pre class="code">cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+./build/redisclone
+nc localhost 6379</pre>
+          </section>
+          <section>
+            <h2>Source repository</h2>
+            <pre class="code">src/server.cpp
+src/datastore.cpp
+src/command_parser.cpp
+tests/test_runner.cpp
+benchmark/benchmark.cpp
+Dockerfile</pre>
+            <p style="margin-top: 14px">
+              GitHub:
+              <a href="https://github.com/Kushagra963-lab/RedisClone">Kushagra963-lab/RedisClone</a>
+            </p>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">RedisClone is a C++20 learning project inspired by Redis.</div>
+    </footer>
+
+    <script>
+      const examples = ["SET name Aditya", "GET name", "EXISTS name", "EXPIRE name 60", "KEYS", "INFO"];
+      let store = {};
+      const startedAt = Date.now();
+      const history = [{ role: "output", text: "RedisClone browser demo ready. Type HELP for commands." }];
+
+      const terminal = document.getElementById("terminal");
+      const storeEl = document.getElementById("store");
+      const input = document.getElementById("commandInput");
+      const pad = document.getElementById("pad");
+
+      function tokenize(text) {
+        const tokens = [];
+        let current = "";
+        let inQuotes = false;
+        let escaping = false;
+        let started = false;
+
+        for (const char of text.trim()) {
+          if (escaping) {
+            current += char;
+            escaping = false;
+            started = true;
+            continue;
+          }
+          if (inQuotes && char === "\\") {
+            escaping = true;
+            continue;
+          }
+          if (char === '"') {
+            inQuotes = !inQuotes;
+            started = true;
+            continue;
+          }
+          if (!inQuotes && /\s/.test(char)) {
+            if (started) {
+              tokens.push(current);
+              current = "";
+              started = false;
+            }
+            continue;
+          }
+          current += char;
+          started = true;
+        }
+
+        if (escaping) {
+          current += "\\";
+        }
+        if (started) {
+          tokens.push(current);
+        }
+        return tokens;
+      }
+
+      function clean() {
+        const now = Date.now();
+        store = Object.fromEntries(Object.entries(store).filter(([, entry]) => !entry.expiresAt || entry.expiresAt > now));
+      }
+
+      function execute(commandText) {
+        clean();
+        const [name = "", ...args] = tokenize(commandText);
+        const command = name.toUpperCase();
+
+        if (!command) return "";
+        if (command === "SET") {
+          if (args.length < 2) return "ERR usage: SET <key> <value>";
+          const [key, ...value] = args;
+          store[key] = { value: value.join(" "), expiresAt: null };
+          return "OK";
+        }
+        if (command === "GET") {
+          if (args.length !== 1) return "ERR usage: GET <key>";
+          return store[args[0]]?.value ?? "(nil)";
+        }
+        if (command === "DEL") {
+          if (args.length !== 1) return "ERR usage: DEL <key>";
+          delete store[args[0]];
+          return "OK";
+        }
+        if (command === "EXISTS") {
+          if (args.length !== 1) return "ERR usage: EXISTS <key>";
+          return store[args[0]] ? "1" : "0";
+        }
+        if (command === "EXPIRE") {
+          if (args.length !== 2) return "ERR usage: EXPIRE <key> <seconds>";
+          const ttl = Number(args[1]);
+          if (!Number.isInteger(ttl) || ttl <= 0) return "ERR seconds must be a positive integer";
+          if (!store[args[0]]) return "0";
+          store[args[0]].expiresAt = Date.now() + ttl * 1000;
+          return "1";
+        }
+        if (command === "KEYS") {
+          const keys = Object.keys(store).sort();
+          return keys.length ? keys.join("\n") : "(empty)";
+        }
+        if (command === "SAVE") return "OK";
+        if (command === "INFO") {
+          const memory = Object.entries(store).reduce((total, [key, entry]) => total + key.length + entry.value.length + 48, 0);
+          const uptime = Math.floor((Date.now() - startedAt) / 1000);
+          return `Keys: ${Object.keys(store).length}\nClients: 1\nUptime: ${uptime} sec\nMemory: ${memory} bytes`;
+        }
+        if (command === "HELP") return "Commands: SET GET DEL EXISTS EXPIRE KEYS SAVE INFO HELP";
+        return `ERR unknown command: ${command}`;
+      }
+
+      function render() {
+        terminal.innerHTML = history
+          .slice(-20)
+          .map((line) => {
+            const klass = line.role === "input" ? "input-line" : "output-line";
+            const text = line.role === "input" ? `> ${line.text}` : line.text;
+            return `<pre class="${klass}"></pre>`;
+          })
+          .join("");
+
+        Array.from(terminal.querySelectorAll("pre")).forEach((pre, index) => {
+          const line = history.slice(-20)[index];
+          pre.textContent = line.role === "input" ? `> ${line.text}` : line.text;
+        });
+
+        clean();
+        const keys = Object.keys(store).sort();
+        if (!keys.length) {
+          storeEl.textContent = "(empty)";
+        } else {
+          storeEl.innerHTML = "";
+          keys.forEach((key) => {
+            const row = document.createElement("div");
+            row.className = "row";
+            const left = document.createElement("span");
+            const right = document.createElement("span");
+            right.className = "value";
+            left.textContent = key;
+            right.textContent = store[key].value;
+            row.append(left, right);
+            storeEl.append(row);
+          });
+        }
+      }
+
+      function run(commandText) {
+        const command = commandText.trim();
+        if (!command) return;
+        const response = execute(command);
+        history.push({ role: "input", text: command }, { role: "output", text: response });
+        input.value = "";
+        render();
+      }
+
+      examples.forEach((command) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = command;
+        button.addEventListener("click", () => {
+          input.value = command;
+          run(command);
+        });
+        pad.append(button);
+      });
+
+      document.getElementById("commandForm").addEventListener("submit", (event) => {
+        event.preventDefault();
+        run(input.value);
+      });
+
+      render();
+    </script>
+  </body>
+</html>
