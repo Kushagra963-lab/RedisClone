@@ -1,0 +1,10 @@
+build/
+cmake-build-*/
+.DS_Store
+redisclone
+redisclone_tests
+redisclone_benchmark
+data/dump.rdb
+*.o
+*.out
+
